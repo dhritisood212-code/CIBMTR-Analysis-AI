@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cibmtr-repro/schemas/study-spec.schema.json",
+  "title": "StudySpec",
+  "description": "Structured interpretation of a study's methods, emitted by the Study Interpreter. Consumed by Cohort Builder, Cohort Assembler, and Analyst. Contains NO published result values (those live in target-results.yaml) - this file describes the ANALYSIS, not its answers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["study", "dataset", "population", "exposure", "endpoints", "covariates", "methods"],
+  "properties": {
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "citation"],
+      "properties": {
+        "id": {"type": "string", "description": "CIBMTR dataset id, e.g. P-5297"},
+        "cibmtr_study_number": {"type": "string", "description": "e.g. MM18-03a"},
+        "working_committee": {"type": "string"},
+        "title": {"type": "string"},
+        "citation": {"type": "string"},
+        "doi": {"type": "string"},
+        "pmid": {"type": "string"},
+        "source_read": {
+          "type": "string",
+          "enum": ["pmc-full-text", "user-provided-methods", "abstract-only"],
+          "description": "What the Interpreter actually read to build this spec. Drives how much can be reproduced."
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data_dictionary_read"],
+      "properties": {
+        "data_dictionary_read": {"type": "boolean", "description": "MUST be true before classes are assigned - classes depend on which variables survive in the public file."},
+        "notable_coarsenings": {
+          "type": "array",
+          "description": "Variables the dictionary shows as binned/removed vs. what the paper used (e.g. age binned to categories, center IDs stripped, exact dates removed). Each drives a coarsening-limited class somewhere.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["variable", "paper_form", "public_file_form"],
+            "properties": {
+              "variable": {"type": "string"},
+              "paper_form": {"type": "string"},
+              "public_file_form": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inclusion", "exclusion"],
+      "properties": {
+        "description": {"type": "string"},
+        "inclusion": {"type": "array", "items": {"$ref": "#/$defs/criterion"}},
+        "exclusion": {"type": "array", "items": {"$ref": "#/$defs/criterion"}}
+      }
+    },
+    "exposure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "coding"],
+      "properties": {
+        "name": {"type": "string", "description": "Main exposure, e.g. 'age at transplantation'"},
+        "coding": {"type": "string", "description": "How the paper models it, e.g. 'age groups: <60, 60-69, >=70' or 'continuous'"},
+        "reference_level": {"type": "string"},
+        "available_in_public_file_as": {"type": "string", "description": "The dictionary column(s) that realize this exposure, or 'binned only' / 'absent'."}
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "estimand", "structure", "estimator"],
+        "properties": {
+          "name": {"type": "string", "description": "e.g. OS, PFS, NRM, relapse/progression"},
+          "estimand": {"type": "string", "description": "Plain-language definition of the quantity."},
+          "structure": {
+            "type": "string",
+            "enum": ["composite-survival", "competing-risk"],
+            "description": "composite-survival -> KM/log-rank/Cox. competing-risk -> CIF/Gray + Fine-Gray OR cause-specific Cox. Chosen by the estimand, not by preference."
+          },
+          "event_definition": {"type": "string", "description": "Which raw component fields assemble the event (e.g. GRFS event = death OR relapse OR grade III-IV aGVHD OR chronic GVHD)."},
+          "competing_events": {"type": "array", "items": {"type": "string"}, "description": "For competing-risk endpoints only."},
+          "time_origin": {"type": "string", "description": "e.g. date of transplant"},
+          "estimator": {
+            "type": "string",
+            "description": "The exact model the paper used for this endpoint, e.g. 'Kaplan-Meier + Cox PH' or 'cumulative incidence + cause-specific Cox'. The Analyst must match this, not substitute a preferred one."
+          }
+        }
+      }
+    },
+    "covariates": {
+      "type": "array",
+      "description": "The full adjustment set as stated in the paper's methods.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "coding", "available_in_public_file"],
+        "properties": {
+          "name": {"type": "string"},
+          "coding": {"type": "string", "description": "Categories/reference level or continuous."},
+          "available_in_public_file": {"type": "boolean"},
+          "public_file_column": {"type": "string"},
+          "note": {"type": "string", "description": "e.g. 'paper used continuous, file bins to categories -> continuous model would be coarsening-limited'."}
+        }
+      }
+    },
+    "methods": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stated_verbatim", "adjustment_strategy"],
+      "properties": {
+        "stated_verbatim": {"type": "string", "description": "The methods text the Interpreter is basing this on, quoted, so downstream reasons can cite it."},
+        "adjustment_strategy": {"type": "string", "description": "e.g. 'multivariable Cox adjusting for the covariate set above'. If the paper only says 'adjusted for relevant covariates' with no list -> flag as an ambiguity and expect not-reproducible targets."},
+        "random_effects": {"type": "array", "items": {"type": "string"}, "description": "e.g. ['center'] -> center random effect. Center IDs are stripped from public files, so any target depending on this is coarsening-limited. Empty for this milestone study (autologous)."},
+        "ambiguities": {"type": "array", "items": {"type": "string"}, "description": "Anything under-specified in the paper. Each should map to a not-reproducible or coarsening-limited class in target-results.yaml."}
+      }
+    }
+  },
+  "$defs": {
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {"type": "string"},
+        "operationalization": {"type": "string", "description": "How to realize this in the data dictionary's columns."},
+        "reproducible_from_public_file": {"type": "boolean"}
+      }
+    }
+  }
+}

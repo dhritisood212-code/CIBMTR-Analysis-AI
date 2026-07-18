@@ -1,0 +1,20 @@
+Package: cibmtrrepro
+Title: Canonical CIBMTR Endpoint and Model Implementations
+Version: 0.0.0.9000
+Authors@R: person("Dhriti", "Sood", email = "dhriti05sood@gmail.com", role = c("aut", "cre"))
+Description: Unit-tested implementations of the standard CIBMTR survival and competing-risk
+    endpoints (OS/DFS/PFS/GRFS via Kaplan-Meier + Cox; relapse/NRM/GVHD/engraftment via
+    cumulative incidence + Gray + Fine-Gray or cause-specific Cox). The reproduction panel's
+    Analyst agent calls these functions so every study shares one validated statistical core.
+License: MIT
+Encoding: UTF-8
+Imports:
+    survival,
+    cmprsk
+Suggests:
+    testthat (>= 3.0.0),
+    tidycmprsk,
+    arrow,
+    IPDfromKM
+Config/testthat/edition: 3
+RoxygenNote: 7.3.1

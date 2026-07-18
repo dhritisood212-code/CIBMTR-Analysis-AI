@@ -1,0 +1,105 @@
+# SYNTHETIC target-results (NOT real CIBMTR/P-5297 numbers). Generated from a
+# canonical analysis of the synthetic cohort by make_synthetic_data.py.
+study_id: P-5297-SYNTHETIC
+table1_targets:
+- id: cohort_n_total
+  endpoint: cohort
+  quantity: Total analytic N
+  expected:
+    point: 3000
+    unit: count
+  reproducibility_class: within-tolerance
+  class_reason: Cohort n from inclusion filters; +-5%.
+  expected_divergence_direction: either
+- id: cohort_n_ge70
+  endpoint: cohort
+  quantity: N in >=70 subgroup
+  expected:
+    point: 873
+    unit: count
+  reproducibility_class: within-tolerance
+  class_reason: Subgroup n from the age-category column; +-5%.
+  expected_divergence_direction: either
+- id: t1_kps_ge90
+  endpoint: table1
+  quantity: Proportion KPS >=90
+  expected:
+    point: 59.9
+    unit: percent
+  reproducibility_class: within-tolerance
+  class_reason: Baseline proportion; +-2-3 pts.
+  expected_divergence_direction: either
+targets:
+- id: os_median
+  endpoint: OS
+  quantity: Median OS
+  expected:
+    point: 25.6
+    unit: months
+  reproducibility_class: exact
+  class_reason: KM readout on the provided OS data.
+  expected_divergence_direction: either
+- id: os_hr_age_ge70
+  endpoint: OS
+  quantity: Adjusted HR, age >=70 vs <60
+  expected:
+    point: 1.392
+    ci_low: 1.26
+    ci_high: 1.538
+    unit: HR
+    significance_verdict: significant
+    source_location: synthetic canonical Cox
+  reproducibility_class: within-tolerance
+  class_reason: Adjusted Cox HR; all covariates present in file -> +-10%.
+  expected_divergence_direction: either
+- id: pfs_median
+  endpoint: PFS
+  quantity: Median PFS
+  expected:
+    point: 17.1
+    unit: months
+  reproducibility_class: exact
+  class_reason: KM readout on the provided PFS data.
+  expected_divergence_direction: either
+- id: pfs_hr_age_ge70
+  endpoint: PFS
+  quantity: Adjusted HR, age >=70 vs <60 (PFS)
+  expected:
+    point: 1.51
+    ci_low: 1.375
+    ci_high: 1.658
+    unit: HR
+    significance_verdict: significant
+    source_location: synthetic canonical Cox
+  reproducibility_class: within-tolerance
+  class_reason: Adjusted Cox HR; covariates present -> +-10%.
+  expected_divergence_direction: either
+- id: nrm_cif_1yr
+  endpoint: NRM
+  quantity: 1-year NRM cumulative incidence
+  expected:
+    point: 0.076
+    unit: proportion
+  reproducibility_class: within-tolerance
+  class_reason: CIF point estimate; +-0.02 absolute.
+  expected_divergence_direction: either
+- id: rel_cif_1yr
+  endpoint: relapse/progression
+  quantity: 1-year relapse cumulative incidence
+  expected:
+    point: 0.22
+    unit: proportion
+  reproducibility_class: within-tolerance
+  class_reason: CIF point estimate; +-0.02 absolute.
+  expected_divergence_direction: either
+- id: os_hr_age_continuous
+  endpoint: OS
+  quantity: HR per 1-year age increase (continuous-age model)
+  expected:
+    point: 1.03
+    unit: HR
+    source_location: hypothetical continuous-age model
+  reproducibility_class: coarsening-limited
+  class_reason: File provides age_grp only; a continuous-age HR cannot be reproduced.
+    Categorical-age model IS reproducible (see os_hr_age_ge70).
+  expected_divergence_direction: either

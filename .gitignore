@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+.env
+
+# Runs: only the ephemeral session data + derived data are ignored; artifacts ARE committed
+# per run (the orchestrator writes a per-run .gitignore too, for defense in depth).
+backend/runs/*/_session/
+backend/runs/*/analytic.parquet
+
+# R
+.Rproj.user/
+renv/library/
+
+# Node / frontend
+node_modules/
+.next/
+dist/
+frontend/dist/
+frontend/dist_ci/
+frontend/site/
+frontend/site2/
+.vite/
+vite.config.ts.timestamp-*.mjs
+
+# build archives
+*.zip

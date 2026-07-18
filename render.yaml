@@ -1,0 +1,19 @@
+# One-click-ish deploy of the backend API to Render (https://render.com).
+# In the Render dashboard: New -> Blueprint -> point at this repo. It reads this file.
+# After it deploys, copy the service URL into frontend/public/config.js (apiBase).
+services:
+  - type: web
+    name: cibmtr-repro-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false            # set this secret in the dashboard; never commit it
+      - key: CORS_ORIGINS
+        value: "*"             # tighten to your Netlify URL once you have it
+      - key: INTERPRETER_MODEL
+        value: claude-opus-4-8
+      - key: ANALYST_MODEL
+        value: claude-opus-4-8

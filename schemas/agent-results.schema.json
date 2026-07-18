@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cibmtr-repro/schemas/agent-results.schema.json",
+  "title": "AgentResults",
+  "description": "The numbers the Analyst's R script actually produced, one entry per target id in target-results.yaml. CRITICAL: every value here must originate from executed R output captured by the sandbox runner - the Analyst is forbidden from writing a number it did not compute. The 'source' field ties each value back to the line/object in reproduce_<study>.R that produced it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["study_id", "script", "r_session", "results"],
+  "properties": {
+    "study_id": {"type": "string"},
+    "script": {"type": "string", "description": "Filename of the artifact script, e.g. reproduce_P-5297.R"},
+    "seed": {"type": "integer", "description": "The RNG seed set in the script for determinism."},
+    "r_session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exit_code"],
+      "properties": {
+        "exit_code": {"type": "integer", "description": "Non-zero => the run is invalid; Comparator must not score it."},
+        "sessionInfo": {"type": "string", "description": "Captured sessionInfo() for the artifact bundle."},
+        "wall_seconds": {"type": "number"}
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "n": {"type": "integer"},
+        "produced_by": {"type": "string", "enum": ["cohort-builder", "cohort-assembler"], "description": "Which producer made analytic.parquet - both share one schema, but this records provenance."}
+      }
+    },
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_id", "observed", "source"],
+        "properties": {
+          "target_id": {"type": "string", "description": "Must match an id in target-results.yaml."},
+          "observed": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "point": {"type": ["number", "null"]},
+              "ci_low": {"type": ["number", "null"]},
+              "ci_high": {"type": ["number", "null"]},
+              "p_value": {"type": ["number", "null"]},
+              "unit": {"type": "string"},
+              "significance_verdict": {"type": "string", "enum": ["significant", "not-significant", "not-reported"]}
+            }
+          },
+          "source": {"type": "string", "description": "Where in the R output this came from, e.g. 'coef(cox_os)[\"age_grp>=70\"]' or 'summary(cif_nrm)$est at t=12'. Enables audit that no number was fabricated."},
+          "not_computed_reason": {"type": "string", "description": "Set ONLY when observed is null because the target is not-reproducible - explains why the script legitimately did not compute it."}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+# EXAMPLE Interpreter output: the numbers to reproduce, EACH tagged with a class
+# assigned BEFORE analysis. Numeric `point`/`ci` values are TODO_FROM_PMC placeholders -
+# the Interpreter fills them from the PMC full text; they are deliberately not invented here.
+# The CLASSES, however, are real and follow the brief's guidance for this study.
+study_id: P-5297
+
+table1_targets:
+  - id: cohort_n_total
+    endpoint: cohort
+    quantity: "Total analytic N (registry cohort)"
+    expected: {point: 15999, unit: count, source_location: "CONFIRM_FROM_PMC abstract/Table 1"}
+    reproducibility_class: within-tolerance
+    class_reason: "Cohort n reconstructable from public inclusion filters; allow +-5% for coding differences."
+    expected_divergence_direction: either
+  - id: cohort_n_ge70
+    endpoint: cohort
+    quantity: "N in the >=70 age subgroup"
+    expected: {point: 2092, unit: count, source_location: "CONFIRM_FROM_PMC"}
+    reproducibility_class: within-tolerance
+    class_reason: "Subgroup n from the age-category column; +-5%."
+    expected_divergence_direction: either
+  - id: t1_kps_ge90
+    endpoint: table1
+    quantity: "Proportion with KPS >=90"
+    expected: {point: null, unit: percent, source_location: "CONFIRM_FROM_PMC Table 1"}
+    reproducibility_class: within-tolerance
+    class_reason: "Baseline proportion; +-2-3 pts. Present in public file."
+
+targets:
+  # --- OS ---
+  - id: os_median
+    endpoint: OS
+    quantity: "Median overall survival (overall or by age group)"
+    expected: {point: null, unit: months, source_location: "CONFIRM_FROM_PMC"}
+    reproducibility_class: exact
+    class_reason: "Median OS is a KM readout on the provided survival data; no coarsened variable required."
+  - id: os_hr_age_top_vs_ref
+    endpoint: OS
+    quantity: "Adjusted HR for oldest age group vs reference"
+    expected: {point: null, ci_low: null, ci_high: null, p_value: null, unit: HR, significance_verdict: not-reported, source_location: "CONFIRM_FROM_PMC Table 2"}
+    reproducibility_class: within-tolerance
+    class_reason: "Adjusted HR from multivariable Cox; reproducible within +-10% AND same direction/significance PROVIDED all adjustment covariates survive in the public file. Categorical-age model is reproducible."
+    expected_divergence_direction: either
+  # --- PFS ---
+  - id: pfs_median
+    endpoint: PFS
+    quantity: "Median progression-free survival"
+    expected: {point: null, unit: months, source_location: "CONFIRM_FROM_PMC"}
+    reproducibility_class: exact
+    class_reason: "KM readout on provided PFS data."
+  - id: pfs_hr_age_top_vs_ref
+    endpoint: PFS
+    quantity: "Adjusted HR for oldest age group vs reference (PFS)"
+    expected: {point: null, ci_low: null, ci_high: null, unit: HR, significance_verdict: not-reported, source_location: "CONFIRM_FROM_PMC"}
+    reproducibility_class: within-tolerance
+    class_reason: "Adjusted Cox HR; covariates present -> +-10%."
+    expected_divergence_direction: either
+  # --- NRM ---
+  - id: nrm_cif_1yr
+    endpoint: NRM
+    quantity: "1-year cumulative incidence of NRM"
+    expected: {point: null, unit: proportion, source_location: "CONFIRM_FROM_PMC"}
+    reproducibility_class: within-tolerance
+    class_reason: "CIF point estimate reproducible within +-0.02 absolute given correct competing-event coding."
+    expected_divergence_direction: either
+  # --- relapse/progression ---
+  - id: rel_cif_1yr
+    endpoint: relapse/progression
+    quantity: "1-year cumulative incidence of relapse/progression"
+    expected: {point: null, unit: proportion, source_location: "CONFIRM_FROM_PMC"}
+    reproducibility_class: within-tolerance
+    class_reason: "CIF within +-0.02 absolute with correct competing-event coding."
+    expected_divergence_direction: either
+
+  # --- The instructive coarsening example the brief calls out ---
+  - id: os_hr_age_continuous
+    endpoint: OS
+    quantity: "HR per 1-year increase in age (continuous-age model)"
+    expected: {point: null, unit: HR, source_location: "only if the paper reports a continuous-age model"}
+    reproducibility_class: coarsening-limited
+    class_reason: >-
+      A continuous-age effect cannot be reproduced if the public file bins age into
+      categories (CONFIRM_FROM_DICTIONARY). Flagged up front as the clean, concrete
+      coarsening example: the categorical-age model IS reproducible; a continuous-age HR
+      is not, because the underlying variable was coarsened in the public file. If the
+      dictionary turns out to carry continuous age, the Interpreter upgrades this to
+      within-tolerance in a fresh pass and records why.
+    expected_divergence_direction: either

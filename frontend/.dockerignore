@@ -1,0 +1,7 @@
+node_modules
+dist
+dist_ci
+site
+*.zip
+.vite
+vite.config.ts.timestamp-*.mjs

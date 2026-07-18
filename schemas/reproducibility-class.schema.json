@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cibmtr-repro/schemas/reproducibility-class.schema.json",
+  "title": "ReproducibilityClass",
+  "description": "The class assigned to a target quantity by the Study Interpreter BEFORE any analysis runs. Committing this up front is the anti-tuning safeguard: the Comparator scores against the pre-assigned class, never one chosen after seeing results.",
+  "type": "string",
+  "enum": ["exact", "within-tolerance", "coarsening-limited", "not-reproducible"],
+  "$comment": "exact = should match to the decimal. within-tolerance = match within a configured band. coarsening-limited = cannot match exactly because a needed variable was coarsened/removed from the public file; expect a known-direction divergence. not-reproducible = required info is absent from the file or the paper."
+}

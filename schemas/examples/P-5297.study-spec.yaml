@@ -1,0 +1,99 @@
+# EXAMPLE Interpreter output for the Milestone-1 study.
+# Design facts below are the hardcoded ground truth from the build brief (verified).
+# Anything the Interpreter must read from the PMC full text at run time is marked
+# CONFIRM_FROM_PMC and must NOT be invented.
+study:
+  id: P-5297
+  cibmtr_study_number: MM18-03a
+  working_committee: Plasma Cell Disorders
+  title: >-
+    Age no bar: A CIBMTR analysis of elderly patients undergoing autologous
+    hematopoietic cell transplantation for multiple myeloma
+  citation: "Munshi PN et al. Cancer. 2020;126(23):5077-5087."
+  doi: 10.1002/cncr.33171
+  pmid: "32965680"
+  source_read: pmc-full-text
+
+dataset:
+  data_dictionary_read: true
+  notable_coarsenings:
+    - variable: age at transplantation
+      paper_form: "primary exposure; reported as age categories/groups"
+      public_file_form: "CONFIRM_FROM_DICTIONARY: whether age is provided continuous or binned"
+    - variable: transplant center
+      paper_form: "not used as a random effect (autologous, single-center effects not modeled)"
+      public_file_form: "center IDs stripped from public files (universal for CIBMTR public data)"
+
+population:
+  description: >-
+    Multiple myeloma patients undergoing upfront (first-line) autologous HCT in the US,
+    2013-2017. Registry cohort ~15,999 registered; the >=70 subgroup (~2,092) is central.
+  inclusion:
+    - text: "Diagnosis of multiple myeloma"
+      operationalization: "CONFIRM_FROM_DICTIONARY: disease field == multiple myeloma"
+      reproducible_from_public_file: true
+    - text: "First autologous HCT (upfront)"
+      operationalization: "graft type == autologous; line of therapy == first"
+      reproducible_from_public_file: true
+    - text: "Transplant years 2013-2017, US centers"
+      operationalization: "year of transplant in [2013, 2017]"
+      reproducible_from_public_file: true
+  exclusion:
+    - text: "Allogeneic or subsequent transplants"
+      operationalization: "exclude graft type != autologous"
+      reproducible_from_public_file: true
+
+exposure:
+  name: age at transplantation
+  coding: "age groups (categorical). CONFIRM_FROM_PMC: exact cutpoints (e.g. <60, 60-69, >=70)"
+  reference_level: "CONFIRM_FROM_PMC: reference age group"
+  available_in_public_file_as: "CONFIRM_FROM_DICTIONARY: age category column; note if continuous age is absent"
+
+endpoints:
+  - name: OS
+    estimand: "Overall survival: time from transplant to death from any cause."
+    structure: composite-survival
+    event_definition: "death from any cause"
+    time_origin: date of autologous transplant
+    estimator: "Kaplan-Meier (unadjusted) + Cox proportional hazards (adjusted)"
+  - name: PFS
+    estimand: "Progression-free survival: time to progression/relapse or death, whichever first."
+    structure: composite-survival
+    event_definition: "progression/relapse OR death from any cause"
+    time_origin: date of autologous transplant
+    estimator: "Kaplan-Meier + Cox proportional hazards"
+  - name: NRM
+    estimand: "Non-recurrence mortality: death without progression/relapse; relapse competes."
+    structure: competing-risk
+    event_definition: "death without prior progression/relapse"
+    competing_events: ["progression/relapse"]
+    time_origin: date of autologous transplant
+    estimator: "Cumulative incidence (Aalen-Johansen) + cause-specific Cox PH (per brief: paper's regression is Cox PH with age as main effect)"
+  - name: relapse/progression
+    estimand: "Cumulative incidence of relapse/progression; NRM competes."
+    structure: competing-risk
+    event_definition: "progression/relapse"
+    competing_events: ["non-recurrence mortality"]
+    time_origin: date of autologous transplant
+    estimator: "Cumulative incidence + cause-specific Cox PH"
+
+covariates:
+  # CONFIRM_FROM_PMC: the full adjustment set. Placeholder rows below reflect variables
+  # standard in this literature; the Interpreter replaces them with the paper's stated set.
+  - name: KPS
+    coding: "CONFIRM_FROM_PMC categories (e.g. <90 / >=90, possibly a missing category)"
+    available_in_public_file: true
+    public_file_column: "CONFIRM_FROM_DICTIONARY"
+  - name: HCT-CI
+    coding: "CONFIRM_FROM_PMC (e.g. 0 / 1-2 / >=3)"
+    available_in_public_file: true
+    public_file_column: "CONFIRM_FROM_DICTIONARY"
+    note: "Interpreter must confirm whether HCT-CI is provided derived or must be assembled from comorbidity components."
+
+methods:
+  stated_verbatim: "CONFIRM_FROM_PMC: paste the paper's statistical-methods paragraph here so downstream reasons can cite it."
+  adjustment_strategy: "Multivariable Cox PH adjusting for the covariate set above; competing-risk endpoints modeled with cause-specific Cox."
+  random_effects: []   # autologous setting: no center random effect (per brief)
+  ambiguities:
+    - "Exact age cutpoints and reference group must come from the PMC text."
+    - "Full covariate list must come from the PMC text; do not assume."

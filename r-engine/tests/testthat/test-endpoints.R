@@ -11,8 +11,10 @@
 test_that("km_fit recovers a known median", {
   d <- data.frame(time = 1:10, event = rep(1L, 10))
   out <- km_fit(d, "time", "event")
-  # 10 uncensored times dropping 0.1 each: S(5)=0.5 -> median 5 (smallest t with S<=0.5).
-  expect_equal(out$medians$median[[1]], 5)
+  # 10 uncensored times: S is exactly 0.5 on [5, 6). survival::survfit reports the median as the
+  # midpoint of that flat interval -> 5.5 (R's KM-median convention; differs from the "smallest t
+  # with S<=0.5" rule some packages use). Verified against the live /r-health endpoint.
+  expect_equal(out$medians$median[[1]], 5.5)
 })
 
 test_that("km_fit reports per-stratum medians", {

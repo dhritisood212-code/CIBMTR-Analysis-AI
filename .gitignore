@@ -23,8 +23,7 @@ node_modules/
 dist/
 frontend/dist/
 frontend/dist_ci/
-frontend/site/
-frontend/site2/
+frontend/site*/
 .vite/
 vite.config.ts.timestamp-*.mjs
 

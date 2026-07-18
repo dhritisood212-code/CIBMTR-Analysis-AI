@@ -2,19 +2,20 @@ import { useEffect, useState } from "react";
 import { api, parseMatchReport, url } from "./api";
 import { DEMO_MATCH_REPORT, DEMO_RUN, DEMO_SCRIPT, DEMO_STUDY } from "./fixtures";
 import { ArtifactBundle } from "./components/ArtifactBundle";
-import { ComplianceGate, type StartOpts } from "./components/ComplianceGate";
+import { ComplianceGate } from "./components/ComplianceGate";
 import { MatchReportView } from "./components/MatchReportView";
 import { RunProgress } from "./components/RunProgress";
 import { StudyCatalog } from "./components/StudyCatalog";
+import { UploadRun, type LaunchBody } from "./components/UploadRun";
 import type { MatchReport, RunState, RunStatus, StudyCatalogEntry } from "./types";
 
-type Screen = "catalog" | "setup" | "run";
+type Tab = "studies" | "upload";
 const TERMINAL: RunStatus[] = ["passed", "partial", "failed", "error"];
 
 export default function App() {
   const [studies, setStudies] = useState<StudyCatalogEntry[]>([]);
   const [demo, setDemo] = useState(false);
-  const [screen, setScreen] = useState<Screen>("catalog");
+  const [tab, setTab] = useState<Tab>("studies");
   const [picked, setPicked] = useState<StudyCatalogEntry | null>(null);
   const [run, setRun] = useState<RunState | null>(null);
   const [report, setReport] = useState<MatchReport | null>(null);
@@ -49,28 +50,21 @@ export default function App() {
     return () => clearInterval(id);
   }, [demo, run]);
 
-  function pick(s: StudyCatalogEntry) {
-    setPicked(s);
-    setScreen("setup");
-  }
-
-  async function start({ tc, endpoint, dataset, dictionary }: StartOpts) {
-    if (!picked) return;
-    setScreen("run");
+  async function launch(body: LaunchBody) {
     if (demo) {
       setRun(DEMO_RUN);
       setReport(DEMO_MATCH_REPORT);
       setScript(DEMO_SCRIPT);
       return;
     }
-    const started = await api.startRun({
-      study_id: picked.study_id,
-      tc_confirmed: tc,
-      primary_endpoint: endpoint,
-      dataset,
-      dictionary,
-    });
-    setRun(started);
+    setRun(await api.startRun(body));
+  }
+
+  function reset() {
+    setRun(null);
+    setReport(null);
+    setScript("");
+    setPicked(null);
   }
 
   function download(name: string) {
@@ -78,7 +72,7 @@ export default function App() {
     window.open(url(`/runs/${run.run_id}/artifacts/${name}`), "_blank");
   }
 
-  const done = run && TERMINAL.includes(run.status);
+  const done = run != null && TERMINAL.includes(run.status);
 
   return (
     <div className="app">
@@ -93,21 +87,48 @@ export default function App() {
         analysis produced here.
       </div>
 
-      {screen === "catalog" && <StudyCatalog studies={studies} onPick={pick} />}
-
-      {screen === "setup" && picked && (
-        <ComplianceGate study={picked} onStart={start} onBack={() => setScreen("catalog")} />
-      )}
-
-      {screen === "run" && run && (
+      {run ? (
         <>
           <RunProgress run={run} />
           {done && report && <MatchReportView report={report} />}
           {done && <ArtifactBundle run={run} script={script} onDownload={download} />}
           {done && (
-            <button className="secondary" onClick={() => { setScreen("catalog"); setRun(null); setReport(null); }}>
-              ← New reproduction
+            <button className="secondary" onClick={reset}>← New reproduction</button>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="topnav">
+            <button className={tab === "studies" ? "active" : ""}
+                    onClick={() => { setTab("studies"); setPicked(null); }}>
+              Studies
             </button>
+            <button className={tab === "upload" ? "active" : ""}
+                    onClick={() => setTab("upload")}>
+              Upload &amp; run
+            </button>
+          </div>
+
+          {tab === "studies" ? (
+            picked ? (
+              <ComplianceGate
+                study={picked}
+                onBack={() => setPicked(null)}
+                onStart={(opts) =>
+                  launch({
+                    study_id: picked.study_id,
+                    tc_confirmed: opts.tc,
+                    primary_endpoint: opts.endpoint,
+                    dataset: opts.dataset,
+                    dictionary: opts.dictionary,
+                  })
+                }
+              />
+            ) : (
+              <StudyCatalog studies={studies} onPick={setPicked} />
+            )
+          ) : (
+            <UploadRun studies={studies} onLaunch={launch} />
           )}
         </>
       )}
